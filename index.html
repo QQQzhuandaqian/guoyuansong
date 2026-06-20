@@ -723,8 +723,15 @@ function clearCache() {
 function aboutApp() { alert('果园送 v1.0\n校园生活服务平台\n快递代取 · 外卖代送 · 食堂代买\n\n质量管理学课程设计作品'); }
 
 /* ========== Demo Orders ========== */
+var APP_VERSION = 'v2.1';
 function seedDemo() {
-  if (STATE.orders.length > 0) return; // 已有数据不覆盖
+  // 版本更新自动清旧数据
+  var oldVer = localStorage.getItem('guoyuansong_ver');
+  if (oldVer !== APP_VERSION) {
+    STATE.orders = [];
+    localStorage.setItem('guoyuansong_ver', APP_VERSION);
+  }
+  if (STATE.orders.length > 0) return;
   var now = Date.now();
   STATE.orders = [
     { id:'CSDEMO001', type:'express', typeName:'快递代取', publisherId:'2024001', publisherName:'阿伟', publisherPhone:'13800001111', acceptor:null, fields:{company:'中通快递',code:'3-5-1024',location:'丰巢快递柜3号',delivery:'2栋506',size:'小件 (¥4)',remark:''}, status:'pending', time:'2026-06-20 14:30:00', timestamp:now-7200000 },
