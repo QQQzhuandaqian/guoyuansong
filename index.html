@@ -722,8 +722,23 @@ function clearCache() {
 }
 function aboutApp() { alert('果园送 v1.0\n校园生活服务平台\n快递代取 · 外卖代送 · 食堂代买\n\n质量管理学课程设计作品'); }
 
+/* ========== Demo Orders ========== */
+function seedDemo() {
+  if (STATE.orders.length > 0) return; // 已有数据不覆盖
+  var now = Date.now();
+  STATE.orders = [
+    { id:'CSDEMO001', type:'express', typeName:'快递代取', publisherId:'2024001', publisherName:'张三', publisherPhone:'13800001111', acceptor:null, fields:{company:'菜鸟驿站',code:'A-3-1024',location:'东区菜鸟驿站',delivery:'北区3号宿舍楼302',size:'小件 (¥4)',remark:''}, status:'pending', time:'2026-06-20 14:30:00', timestamp:now-7200000 },
+    { id:'CSDEMO002', type:'food', typeName:'外卖代送', publisherId:'2024002', publisherName:'李四', publisherPhone:'13800002222', acceptor:null, fields:{platform:'美团外卖',pickup:'学校北门外卖柜',delivery:'西区5号宿舍楼602',amount:'18元',remark:'奶茶不要冰'}, status:'pending', time:'2026-06-20 15:00:00', timestamp:now-5400000 },
+    { id:'CSDEMO003', type:'cafeteria', typeName:'食堂代买', publisherId:'2024003', publisherName:'王五', publisherPhone:'13800003333', acceptor:null, fields:{window:'麻辣烫',dishes:'麻辣烫微辣，加一份粉丝',budget:'20',delivery:'东区2号宿舍楼301',remark:'多放辣椒'}, status:'pending', time:'2026-06-20 15:20:00', timestamp:now-4200000 },
+    { id:'CSDEMO004', type:'express', typeName:'快递代取', publisherId:'2024004', publisherName:'赵六', publisherPhone:'13800004444', acceptor:null, fields:{company:'顺丰速运',code:'SF12345678',location:'西区快递柜',delivery:'南区7号宿舍楼110',size:'中件 (¥6)',remark:'快递比较重'}, status:'pending', time:'2026-06-20 16:00:00', timestamp:now-1800000 },
+    { id:'CSDEMO005', type:'food', typeName:'外卖代送', publisherId:'2024005', publisherName:'陈七', publisherPhone:'13800005555', acceptor:null, fields:{platform:'饿了么',pickup:'南门外卖柜',delivery:'北区2号宿舍楼505',amount:'35元',remark:'两份餐'}, status:'pending', time:'2026-06-20 16:10:00', timestamp:now-1200000 }
+  ];
+  saveState();
+}
+
 /* ========== Init ========== */
 loadState();
+seedDemo();
 if (STATE.user) { showPage('home'); updateProfile(); updateHomeStats(); }
 else { showPage('login'); }
 </script>
