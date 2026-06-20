@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>果园送 - 快递代取 · 外卖代送 · 食堂代买</title>
+<style>
+/* ========== CSS Variables & Reset ========== */
+:root {
+  --primary: #07C160; --primary-dark: #06AD56; --primary-light: #E8F8EF;
+  --blue: #3B82F6; --blue-light: #EFF6FF;
+  --orange: #F59E0B; --orange-light: #FFFBEB;
+  --purple: #8B5CF6; --purple-light: #F5F3FF;
+  --hot: #FF6B35; --hot-light: #FFF5F0;
+  --bg: #F5F5F5; --white: #FFFFFF;
+  --text: #1A1A1A; --text-secondary: #6B7280; --text-light: #9CA3AF;
+  --border: #E5E7EB;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 12px; --radius-sm: 8px;
+  --tab-height: 56px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #E8E8E8;
+  display: flex; justify-content: center; align-items: center;
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+
+/* Phone Frame */
+#phone { width: 375px; height: 812px; background: var(--bg); border-radius: 28px; overflow: hidden; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 2px #1a1a1a; display: flex; flex-direction: column; }
+
+/* Status bar */
+#statusbar { height: 44px; background: var(--white); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 12px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+#statusbar .time { font-size: 14px; font-weight: 700; }
+#statusbar .icons { display: flex; gap: 6px; align-items: center; }
+
+/* Page container */
+#pages { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; -webkit-overflow-scrolling: touch; }
+
+.page { display: none; flex-direction: column; min-height: 100%; background: var(--bg); padding-bottom: calc(var(--tab-height) + 20px); }
+.page.active { display: flex; }
+.page.no-tab { padding-bottom: 0; }
+
+/* Navbar */
+.navbar { background: var(--white); padding: 12px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.navbar .back-btn { width: 32px; height: 32px; border: none; background: none; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
+.navbar .back-btn:active { background: #f0f0f0; }
+.navbar .title { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; text-align: center; margin-right: 32px; }
+
+/* Tab Bar */
+#tabbar { height: var(--tab-height); background: var(--white); border-top: 1px solid var(--border); display: flex; position: absolute; bottom: 0; left: 0; right: 0; z-index: 200; }
+#tabbar.hidden { display: none; }
+.tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; color: var(--text-light); transition: color 0.2s; border: none; background: none; font-size: 10px; font-family: inherit; }
+.tab-item.active { color: var(--primary); }
+.tab-item .tab-icon { font-size: 22px; line-height: 1; }
+
+/* Common */
+.section { padding: 16px; }
+.card { background: var(--white); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); }
+
+/* Service cards */
+.service-grid { display: flex; gap: 12px; padding: 0 16px; margin-bottom: 16px; }
+.service-card { flex: 1; background: var(--white); border-radius: var(--radius); padding: 20px 14px; text-align: center; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; border: none; font-family: inherit; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.service-card:active { transform: scale(0.96); }
+.service-card .icon-circle { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.service-card .icon-circle.express { background: var(--blue-light); }
+.service-card .icon-circle.food { background: var(--orange-light); }
+.service-card .icon-circle.cafeteria { background: var(--purple-light); }
+.service-card .svc-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.service-card .svc-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+
+/* Banner */
+.banner { margin: 0 16px 16px; background: linear-gradient(135deg, #07C160, #06AD56); border-radius: var(--radius); padding: 20px 18px; color: #fff; box-shadow: 0 4px 16px rgba(7,193,96,0.25); }
+.banner .banner-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.banner .banner-sub { font-size: 12px; opacity: 0.9; }
+
+/* Announce */
+.announce { margin: 0 16px 16px; background: var(--white); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+
+/* Hall entry */
+.hall-entry { margin: 0 16px 16px; background: linear-gradient(135deg, #FFF5F0, #FFF0E8); border: 2px solid #FFD4BF; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.hall-entry:active { background: #FFF0E5; }
+.hall-entry-left { display: flex; align-items: center; gap: 12px; }
+.hall-entry-icon { font-size: 28px; background: linear-gradient(135deg, #FF6B35, #F7931E); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hall-entry-title { font-size: 15px; font-weight: 700; color: #FF6B35; }
+.hall-entry-sub { font-size: 11px; color: #B0755A; display: block; }
+.hall-entry-arrow { font-size: 22px; color: #FF6B35; }
+
+/* Form */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.form-group label .required { color: #EF4444; }
+.form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-family: inherit; background: #FAFAFA; transition: border-color 0.2s; outline: none; color: var(--text); }
+.form-input:focus { border-color: var(--primary); background: var(--white); }
+.form-input::placeholder { color: #C0C0C0; }
+textarea.form-input { resize: vertical; min-height: 80px; }
+select.form-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%239CA3AF'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+/* Buttons */
+.btn { display: block; width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; text-align: center; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:active { background: var(--primary-dark); transform: scale(0.98); }
+.btn-outline { background: var(--white); color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-sm { padding: 8px 16px; font-size: 13px; width: auto; }
+
+/* Price tag */
+.price-tag { color: #EF4444; font-weight: 700; font-size: 16px; }
+
+/* Order card */
+.order-card .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.order-card .order-type { font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.order-card .order-type.express { background: var(--blue-light); color: var(--blue); }
+.order-card .order-type.food { background: var(--orange-light); color: var(--orange); }
+.order-card .order-type.cafeteria { background: var(--purple-light); color: var(--purple); }
+.order-card .order-status { font-size: 12px; font-weight: 600; }
+.order-card .order-status.pending { color: #F59E0B; }
+.order-card .order-status.accepted { color: #FF6B35; }
+.order-card .order-status.done { color: #10B981; }
+.order-card .order-detail { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.order-card .order-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.order-card .order-time { font-size: 11px; color: var(--text-light); }
+.acceptor-info { margin-top: 6px; font-size: 12px; color: #FF6B35; background: #FFF5F0; padding: 4px 10px; border-radius: 10px; display: inline-block; }
+.status-hint { margin-top: 10px; font-size: 12px; color: var(--text-light); text-align: center; }
+
+/* Profile */
+.profile-header { background: linear-gradient(135deg, #07C160, #06AD56); padding: 30px 20px; text-align: center; color: #fff; }
+.profile-avatar { width: 68px; height: 68px; border-radius: 50%; background: rgba(255,255,255,0.3); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid rgba(255,255,255,0.6); }
+.profile-name { font-size: 18px; font-weight: 700; }
+.profile-id { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+.menu-list { margin: 16px; background: var(--white); border-radius: var(--radius); overflow: hidden; }
+.menu-item { padding: 15px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-bottom: 1px solid var(--border); font-size: 15px; transition: background 0.15s; border: none; width: 100%; text-align: left; background: none; font-family: inherit; }
+.menu-item:last-child { border-bottom: none; }
+.menu-item:active { background: #f9f9f9; }
+.menu-item .menu-icon { font-size: 20px; width: 28px; text-align: center; }
+.menu-item .menu-arrow { margin-left: auto; color: var(--text-light); }
+
+/* Login */
+.login-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 32px; background: var(--white); }
+.login-logo { width: 80px; height: 80px; background: linear-gradient(135deg, #07C160, #06AD56); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 42px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(7,193,96,0.3); }
+.login-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.login-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; }
+.login-form { width: 100%; }
+.login-form .btn { margin-top: 24px; }
+
+/* Hall page */
+.hall-hero { margin: 16px; background: linear-gradient(135deg, #FF6B35, #F7931E); border-radius: 20px; padding: 20px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 6px 24px rgba(255,107,53,0.3); color: #fff; }
+.hall-hero .hero-icon { font-size: 36px; background: rgba(255,255,255,0.25); width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hall-hero .hero-title { font-size: 18px; font-weight: 700; }
+.hall-hero .hero-sub { font-size: 12px; opacity: 0.9; }
+.hall-hero .hero-count { text-align: center; background: rgba(255,255,255,0.25); border-radius: 12px; padding: 8px 14px; flex-shrink: 0; margin-left: auto; }
+.hall-hero .count-num { font-size: 26px; font-weight: 700; display: block; line-height: 1.1; }
+.hall-hero .count-label { font-size: 11px; opacity: 0.9; }
+
+.hall-card { background: #fff; border-radius: 16px; margin: 0 16px 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+.hall-card .card-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 14px 0; }
+.hall-card .card-type { font-size: 13px; font-weight: 600; padding: 3px 12px; border-radius: 16px; }
+.hall-card .card-type.express { background: #EFF6FF; color: #3B82F6; }
+.hall-card .card-type.food { background: #FFFBEB; color: #F59E0B; }
+.hall-card .card-type.cafeteria { background: #F5F3FF; color: #8B5CF6; }
+.hall-card .card-reward { font-size: 14px; font-weight: 700; color: #FF6B35; background: #FFF5F0; padding: 4px 12px; border-radius: 14px; }
+.hall-card .card-body { padding: 12px 14px; }
+.hall-card .info-row { display: flex; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+.hall-card .info-label { width: 40px; color: #9CA3AF; flex-shrink: 0; }
+.hall-card .info-value { color: #1A1A1A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hall-card .remark-row { font-size: 12px; color: #6B7280; background: #F9FAFB; padding: 8px 10px; border-radius: 10px; margin-top: 4px; }
+.hall-card .card-foot { display: flex; align-items: center; padding: 12px 14px; border-top: 1px solid #F0F0F0; gap: 8px; }
+.hall-card .pub-name { font-size: 12px; color: #6B7280; flex: 1; }
+.hall-card .pub-time { font-size: 11px; color: #C0C0C0; }
+.hall-card .grab-btn { font-size: 13px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #FF6B35, #F7931E); padding: 8px 18px; border-radius: 20px; border: none; cursor: pointer; box-shadow: 0 3px 12px rgba(255,107,53,0.3); }
+.hall-card .grab-btn:active { opacity: 0.8; transform: scale(0.95); }
+.list-end { text-align: center; color: #C0C0C0; font-size: 12px; padding: 8px 0 16px; }
+
+/* Order sub-tabs */
+.sub-tab-bar { display: flex; margin: 0 16px 12px; background: #fff; border-radius: 12px; padding: 4px; box-shadow: 0 1px 8px rgba(0,0,0,0.04); }
+.sub-tab-item { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 600; color: #9CA3AF; border-radius: 10px; border: none; background: none; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+.sub-tab-item.active { background: linear-gradient(135deg, #FF6B35, #F7931E); color: #fff; }
+
+/* Modals */
+.modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 300; }
+.modal-popup { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 20px 20px 0 0; z-index: 301; max-height: 80vh; overflow-y: auto; padding-bottom: 20px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 12px; border-bottom: 1px solid var(--border); }
+.modal-title { font-size: 17px; font-weight: 700; }
+.modal-close { width: 32px; height: 32px; border-radius: 50%; background: #F5F5F5; border: none; cursor: pointer; font-size: 16px; color: #9CA3AF; display: flex; align-items: center; justify-content: center; }
+.modal-close:active { background: #E5E7EB; }
+.modal-body { padding: 18px; }
+
+/* Stats */
+.stats-grid { display: flex; gap: 10px; margin-bottom: 16px; }
+.stats-item { flex: 1; text-align: center; padding: 14px 8px; background: #F9FAFB; border-radius: 12px; }
+.stats-num { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+.stats-label { font-size: 12px; color: #6B7280; }
+.stats-section-title { font-size: 14px; font-weight: 700; color: #1A1A1A; margin-bottom: 10px; }
+.stats-detail { background: #F9FAFB; border-radius: 12px; margin-bottom: 16px; }
+.detail-row { display: flex; justify-content: space-between; padding: 10px 14px; font-size: 14px; border-bottom: 1px solid #E5E7EB; }
+.detail-row:last-child { border-bottom: none; }
+.detail-num { color: #6B7280; font-weight: 600; }
+
+/* Stars */
+.star-row { display: flex; justify-content: center; gap: 12px; }
+.star-btn { font-size: 36px; color: #D1D5DB; border: none; background: none; cursor: pointer; transition: color 0.15s; }
+.star-btn.active { color: #F59E0B; }
+
+/* Settings */
+.settings-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 14px; border-bottom: 1px solid #E5E7EB; cursor: pointer; font-size: 14px; background: none; width: 100%; text-align: left; font-family: inherit; border-left: none; border-right: none; border-top: none; }
+.settings-item:last-child { border-bottom: none; }
+.settings-item:active { background: #F0F0F0; }
+
+/* Empty */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-light); }
+.empty-state .empty-icon { font-size: 56px; margin-bottom: 12px; }
+.empty-state .empty-text { font-size: 14px; }
+
+/* Toast */
+#toast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.78); color: #fff; padding: 10px 22px; border-radius: 20px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+#toast.show { opacity: 1; }
+
+@media (max-width: 420px) {
+  body { background: var(--bg); }
+  #phone { width: 100%; height: 100vh; border-radius: 0; box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="phone">
+  <div id="statusbar">
+    <span class="time">9:41</span>
+    <span class="icons">📶 📡 🔋</span>
+  </div>
+
+  <div id="pages">
+
+    <!-- ========== LOGIN ========== -->
+    <div id="page-login" class="page no-tab active">
+      <div class="login-wrap">
+        <div class="login-logo">📦</div>
+        <div class="login-title">果园送</div>
+        <div class="login-sub">快递代取 · 外卖代送 · 食堂代买</div>
+        <div class="login-form">
+          <div class="form-group"><label>学号</label><input class="form-input" id="login-id" type="text" placeholder="请输入学号" maxlength="20"></div>
+          <div class="form-group"><label>姓名</label><input class="form-input" id="login-name" type="text" placeholder="请输入姓名" maxlength="10"></div>
+          <div class="form-group"><label>手机号</label><input class="form-input" id="login-phone" type="tel" placeholder="请输入手机号" maxlength="11"></div>
+          <button class="btn btn-primary" onclick="doLogin()">登 录</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== HOME ========== -->
+    <div id="page-home" class="page">
+      <div style="padding-top:16px"></div>
+      <div class="banner">
+        <div class="banner-title">🚀 果园送，送达你的每一单</div>
+        <div class="banner-sub">快递太重不想拿？外卖太远不想跑？食堂排队太麻烦？我们来！</div>
+      </div>
+      <div class="service-grid">
+        <button class="service-card" onclick="goTo('express')">
+          <div class="icon-circle express">📦</div>
+          <div class="svc-title">快递代取</div>
+          <div class="svc-desc">帮你取快递<br>送到宿舍楼下</div>
+        </button>
+        <button class="service-card" onclick="goTo('food')">
+          <div class="icon-circle food">🛵</div>
+          <div class="svc-title">外卖代送</div>
+          <div class="svc-desc">帮取校外外卖<br>直达你手中</div>
+        </button>
+        <button class="service-card" onclick="goTo('cafeteria')">
+          <div class="icon-circle cafeteria">🍱</div>
+          <div class="svc-title">食堂代买</div>
+          <div class="svc-desc">帮你去食堂<br>打包带饭</div>
+        </button>
+      </div>
+
+      <!-- 闪送侠入口 -->
+      <div class="hall-entry" onclick="switchTab('hall')">
+        <div class="hall-entry-left">
+          <span class="hall-entry-icon">⚡</span>
+          <div>
+            <span class="hall-entry-title">闪送侠大厅</span>
+            <span class="hall-entry-sub">帮同学跑腿赚零花 → 去看看可接订单</span>
+          </div>
+        </div>
+        <span class="hall-entry-arrow">›</span>
+      </div>
+
+      <div class="section">
+        <div class="card" style="display:flex;justify-content:space-around;text-align:center;">
+          <div><div style="font-size:24px;font-weight:700;color:var(--primary);" id="stat-total">0</div><div style="font-size:12px;color:var(--text-secondary);">我的订单</div></div>
+          <div><div style="font-size:24px;font-weight:700;color:var(--blue);" id="stat-done">0</div><div style="font-size:12px;color:var(--text-secondary);">已完成</div></div>
+          <div><div style="font-size:24px;font-weight:700;color:#EF4444;" id="stat-score">--</div><div style="font-size:12px;color:var(--text-secondary);">服务评分</div></div>
+        </div>
+      </div>
+
+      <div class="announce">📢 高峰期订单较多，请耐心等待，我们会尽快为您服务！</div>
+    </div>
+
+    <!-- ========== HALL (闪送侠大厅) ========== -->
+    <div id="page-hall" class="page">
+      <div class="hall-hero">
+        <div class="hero-icon">⚡</div>
+        <div><div class="hero-title">闪送侠大厅</div><div class="hero-sub">帮同学跑腿，赚点零花钱 💰</div></div>
+        <div class="hero-count"><span class="count-num" id="hall-count">0</span><span class="count-label">单可抢</span></div>
+      </div>
+      <div id="hall-list"></div>
+    </div>
+
+    <!-- ========== EXPRESS ========== -->
+    <div id="page-express" class="page no-tab">
+      <div class="navbar"><button class="back-btn" onclick="goBack()">←</button><div class="title">📦 快递代取</div></div>
+      <div class="section"><div class="card">
+        <div style="font-size:15px;font-weight:600;margin-bottom:14px;">填写快递信息</div>
+        <div class="form-group"><label><span class="required">*</span> 快递公司</label><select class="form-input" id="exp-company"><option value="">请选择快递公司</option><option>菜鸟驿站</option><option>顺丰速运</option><option>中通快递</option><option>圆通速递</option><option>韵达快递</option><option>申通快递</option><option>京东快递</option><option>邮政快递</option><option>极兔速递</option></select></div>
+        <div class="form-group"><label><span class="required">*</span> 取件码 / 货号</label><input class="form-input" id="exp-code" placeholder="例如：A-3-1024"></div>
+        <div class="form-group"><label><span class="required">*</span> 取件地址</label><input class="form-input" id="exp-location" placeholder="例如：东区菜鸟驿站"></div>
+        <div class="form-group"><label><span class="required">*</span> 送达地址</label><input class="form-input" id="exp-delivery" placeholder="例如：北区3号宿舍楼"></div>
+        <div class="form-group"><label>快递大小</label><select class="form-input" id="exp-size"><option value="小件 (¥4)">小件 — 预估 ¥4</option><option value="中件 (¥6)" selected>中件 — 预估 ¥6</option><option value="大件 (¥8)">大件 — 预估 ¥8</option></select></div>
+        <div class="form-group"><label>备注</label><textarea class="form-input" id="exp-remark" placeholder="如有特殊要求请注明（选填）"></textarea></div>
+        <button class="btn btn-primary" onclick="submitOrder('express')">📦 立即下单</button>
+      </div></div>
+    </div>
+
+    <!-- ========== FOOD ========== -->
+    <div id="page-food" class="page no-tab">
+      <div class="navbar"><button class="back-btn" onclick="goBack()">←</button><div class="title">🛵 外卖代送</div></div>
+      <div class="section"><div class="card">
+        <div style="font-size:15px;font-weight:600;margin-bottom:14px;">填写外卖信息</div>
+        <div class="form-group"><label><span class="required">*</span> 外卖平台</label><select class="form-input" id="food-platform"><option value="">请选择平台</option><option>美团外卖</option><option>饿了么</option><option>肯德基/麦当劳</option><option>其他</option></select></div>
+        <div class="form-group"><label><span class="required">*</span> 取餐地点</label><input class="form-input" id="food-pickup" placeholder="例如：学校北门外卖柜"></div>
+        <div class="form-group"><label><span class="required">*</span> 送达地址</label><input class="form-input" id="food-delivery" placeholder="例如：西区5号宿舍楼602"></div>
+        <div class="form-group"><label><span class="required">*</span> 下单金额（元）</label><input class="form-input" id="food-amount" type="number" placeholder="自定义下单金额，例如：15" min="1"></div>
+        <div class="form-group"><label>备注</label><textarea class="form-input" id="food-remark" placeholder="如有特殊要求请注明（选填）"></textarea></div>
+        <button class="btn btn-primary" onclick="submitOrder('food')">🛵 立即下单</button>
+      </div></div>
+    </div>
+
+    <!-- ========== CAFETERIA ========== -->
+    <div id="page-cafeteria" class="page no-tab">
+      <div class="navbar"><button class="back-btn" onclick="goBack()">←</button><div class="title">🍱 食堂代买</div></div>
+      <div class="section"><div class="card">
+        <div style="font-size:15px;font-weight:600;margin-bottom:14px;">填写代买信息</div>
+        <div class="form-group"><label><span class="required">*</span> 选择窗口</label><select class="form-input" id="cafeteria-window"><option value="">请选择窗口</option><option>自选餐</option><option>粉面</option><option>饭</option><option>麻辣烫</option><option>其他</option></select></div>
+        <div class="form-group"><label><span class="required">*</span> 想吃的菜品</label><textarea class="form-input" id="cafeteria-dishes" placeholder="例如：麻辣香锅，微辣，加米饭一份"></textarea></div>
+        <div class="form-group"><label>预算（元）</label><input class="form-input" id="cafeteria-budget" type="number" placeholder="例如：20" min="5" max="100"></div>
+        <div class="form-group"><label><span class="required">*</span> 送达地址</label><input class="form-input" id="cafeteria-delivery" placeholder="例如：东区2号宿舍楼301"></div>
+        <div class="form-group"><label>备注</label><textarea class="form-input" id="cafeteria-remark" placeholder="例如：不要香菜、多放辣椒（选填）"></textarea></div>
+        <button class="btn btn-primary" onclick="submitOrder('cafeteria')">🍱 立即下单</button>
+      </div></div>
+    </div>
+
+    <!-- ========== ORDERS ========== -->
+    <div id="page-orders" class="page">
+      <div style="padding:16px 16px 0;"><div style="font-size:18px;font-weight:700;">我的订单</div></div>
+      <div class="sub-tab-bar">
+        <button class="sub-tab-item active" onclick="switchOrderTab('published')">我发布的</button>
+        <button class="sub-tab-item" onclick="switchOrderTab('accepted')">我接的单</button>
+      </div>
+      <div class="section" id="order-list">
+        <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">暂无订单</div></div>
+      </div>
+    </div>
+
+    <!-- ========== PROFILE ========== -->
+    <div id="page-profile" class="page">
+      <div class="profile-header">
+        <div class="profile-avatar">😊</div>
+        <div class="profile-name" id="profile-name">未登录</div>
+        <div class="profile-id" id="profile-id">学号：--</div>
+      </div>
+      <div class="menu-list">
+        <button class="menu-item" onclick="goTo('express')"><span class="menu-icon">📦</span> 快递代取<span class="menu-arrow">›</span></button>
+        <button class="menu-item" onclick="goTo('food')"><span class="menu-icon">🛵</span> 外卖代送<span class="menu-arrow">›</span></button>
+        <button class="menu-item" onclick="goTo('cafeteria')"><span class="menu-icon">🍱</span> 食堂代买<span class="menu-arrow">›</span></button>
+      </div>
+      <div class="menu-list">
+        <button class="menu-item" onclick="openStats()"><span class="menu-icon">📊</span> 服务统计<span class="menu-arrow">›</span></button>
+        <button class="menu-item" onclick="openFeedback()"><span class="menu-icon">⭐</span> 评价反馈<span class="menu-arrow">›</span></button>
+        <button class="menu-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> 设置<span class="menu-arrow">›</span></button>
+      </div>
+      <div class="section"><button class="btn btn-outline" onclick="doLogout()">退出登录</button></div>
+
+      <!-- Stats Modal -->
+      <div id="stats-modal" style="display:none"><div class="modal-mask" onclick="closeStats()"></div><div class="modal-popup"><div class="modal-header"><span class="modal-title">📊 服务统计</span><button class="modal-close" onclick="closeStats()">✕</button></div><div class="modal-body" id="stats-content"></div></div></div>
+      <!-- Feedback Modal -->
+      <div id="feedback-modal" style="display:none"><div class="modal-mask" onclick="closeFeedback()"></div><div class="modal-popup"><div class="modal-header"><span class="modal-title">⭐ 评价反馈</span><button class="modal-close" onclick="closeFeedback()">✕</button></div><div class="modal-body"><div style="text-align:center;font-size:14px;color:#6B7280;margin-bottom:14px">给我们的服务打个分吧</div><div class="star-row" id="star-row"><button class="star-btn" onclick="setRating(1)">★</button><button class="star-btn" onclick="setRating(2)">★</button><button class="star-btn" onclick="setRating(3)">★</button><button class="star-btn" onclick="setRating(4)">★</button><button class="star-btn" onclick="setRating(5)">★</button></div><div style="text-align:center;font-size:14px;color:var(--primary);margin-top:8px;font-weight:600" id="rating-word">请点击星星评分</div><div class="form-group" style="margin-top:16px"><label>你的建议（选填）</label><textarea class="form-input" id="feedback-text" placeholder="有什么想对我们说的..."></textarea></div><button class="btn btn-primary" onclick="submitFeedback()">提交评价</button></div></div></div>
+      <!-- Settings Modal -->
+      <div id="settings-modal" style="display:none"><div class="modal-mask" onclick="closeSettings()"></div><div class="modal-popup"><div class="modal-header"><span class="modal-title">⚙️ 设置</span><button class="modal-close" onclick="closeSettings()">✕</button></div><div class="modal-body"><button class="settings-item" onclick="clearCache()">🗑️ 清除缓存<span class="menu-arrow">›</span></button><button class="settings-item" onclick="aboutApp()">ℹ️ 关于果园送<span class="menu-arrow">›</span></button></div></div></div>
+    </div>
+
+  </div><!-- /#pages -->
+
+  <div id="toast"></div>
+
+  <div id="tabbar">
+    <button class="tab-item active" onclick="switchTab('home')"><span class="tab-icon">🏠</span><span>首页</span></button>
+    <button class="tab-item" onclick="switchTab('hall')"><span class="tab-icon">⚡</span><span>闪送侠</span></button>
+    <button class="tab-item" onclick="switchTab('orders')"><span class="tab-icon">📋</span><span>订单</span></button>
+    <button class="tab-item" onclick="switchTab('profile')"><span class="tab-icon">👤</span><span>我的</span></button>
+  </div>
+</div><!-- /#phone -->
+
+<script>
+/* ========== Global State ========== */
+var STATE = {
+  user: null,
+  currentPage: 'login',
+  currentTab: 'home',
+  orderTab: 'published',
+  pageHistory: [],
+  orders: [],
+  feedbackRating: 0
+};
+var TABS = ['home', 'hall', 'orders', 'profile'];
+
+/* ========== Persistence ========== */
+function loadState() {
+  try {
+    var s = localStorage.getItem('guoyuansong_data');
+    if (s) { var d = JSON.parse(s); STATE.user = d.user || null; STATE.orders = d.orders || []; }
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem('guoyuansong_data', JSON.stringify({ user: STATE.user, orders: STATE.orders })); } catch(e) {}
+}
+
+/* ========== Navigation ========== */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  var pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  STATE.currentPage = name;
+
+  var tb = document.getElementById('tabbar');
+  if (TABS.indexOf(name) > -1) {
+    tb.classList.remove('hidden');
+    document.querySelectorAll('#tabbar .tab-item').forEach(function(t, i) {
+      t.classList.toggle('active', TABS[i] === name);
+    });
+    STATE.currentTab = name;
+  } else {
+    tb.classList.add('hidden');
+  }
+
+  if (name === 'orders') renderOrders();
+  if (name === 'profile') updateProfile();
+  if (name === 'home') updateHomeStats();
+  if (name === 'hall') renderHall();
+  document.getElementById('pages').scrollTop = 0;
+}
+
+function switchTab(name) { STATE.pageHistory = []; STATE.orderTab = 'published'; showPage(name); }
+function goTo(name) { STATE.pageHistory.push(STATE.currentPage); showPage(name); }
+function goBack() { if (STATE.pageHistory.length) showPage(STATE.pageHistory.pop()); else showPage('home'); }
+
+/* ========== Toast ========== */
+function toast(msg, ms) {
+  ms = ms || 1800;
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function() { el.classList.remove('show'); }, ms);
+}
+
+/* ========== Login ========== */
+function doLogin() {
+  var id = document.getElementById('login-id').value.trim();
+  var name = document.getElementById('login-name').value.trim();
+  var phone = document.getElementById('login-phone').value.trim();
+  if (!id) { toast('请输入学号'); return; }
+  if (!name) { toast('请输入姓名'); return; }
+  if (!phone || !/^1\d{10}$/.test(phone)) { toast('请输入正确的手机号'); return; }
+  STATE.user = { id: id, name: name, phone: phone };
+  saveState();
+  toast('登录成功！🎉');
+  setTimeout(function() { STATE.pageHistory = []; showPage('home'); }, 600);
+}
+
+function doLogout() {
+  if (confirm('确定要退出登录吗？')) {
+    STATE.user = null; saveState(); STATE.pageHistory = []; showPage('login');
+  }
+}
+
+/* ========== Submit Order ========== */
+function submitOrder(type) {
+  if (!STATE.user) { toast('请先登录'); showPage('login'); return; }
+
+  var f = {};
+  if (type === 'express') {
+    f.company = document.getElementById('exp-company').value;
+    f.code = document.getElementById('exp-code').value.trim();
+    f.location = document.getElementById('exp-location').value.trim();
+    f.delivery = document.getElementById('exp-delivery').value.trim();
+    f.size = document.getElementById('exp-size').value;
+    f.remark = document.getElementById('exp-remark').value.trim();
+    if (!f.company) { toast('请选择快递公司'); return; }
+    if (!f.code) { toast('请输入取件码'); return; }
+    if (!f.location) { toast('请输入取件地址'); return; }
+    if (!f.delivery) { toast('请输入送达地址'); return; }
+  } else if (type === 'food') {
+    f.platform = document.getElementById('food-platform').value;
+    f.pickup = document.getElementById('food-pickup').value.trim();
+    f.delivery = document.getElementById('food-delivery').value.trim();
+    f.amount = document.getElementById('food-amount').value.trim();
+    f.remark = document.getElementById('food-remark').value.trim();
+    if (!f.platform) { toast('请选择外卖平台'); return; }
+    if (!f.pickup) { toast('请输入取餐地点'); return; }
+    if (!f.delivery) { toast('请输入送达地址'); return; }
+    if (!f.amount || isNaN(f.amount) || Number(f.amount) <= 0) { toast('请输入有效的下单金额'); return; }
+    f.amount = f.amount + '元';
+  } else if (type === 'cafeteria') {
+    f.window = document.getElementById('cafeteria-window').value;
+    f.dishes = document.getElementById('cafeteria-dishes').value.trim();
+    f.budget = document.getElementById('cafeteria-budget').value.trim();
+    f.delivery = document.getElementById('cafeteria-delivery').value.trim();
+    f.remark = document.getElementById('cafeteria-remark').value.trim();
+    if (!f.window) { toast('请选择窗口'); return; }
+    if (!f.dishes) { toast('请填写想吃的菜品'); return; }
+    if (!f.delivery) { toast('请输入送达地址'); return; }
+  }
+
+  var typeNames = { express: '快递代取', food: '外卖代送', cafeteria: '食堂代买' };
+  var order = {
+    id: 'CS' + Date.now().toString(36).toUpperCase(),
+    type: type,
+    typeName: typeNames[type],
+    publisherId: STATE.user.id,
+    publisherName: STATE.user.name,
+    publisherPhone: STATE.user.phone,
+    acceptor: null,
+    fields: f,
+    status: 'pending',
+    time: new Date().toLocaleString('zh-CN'),
+    timestamp: Date.now()
+  };
+
+  STATE.orders.unshift(order);
+  saveState();
+
+  // Clear form
+  document.querySelectorAll('#page-' + type + ' .form-input').forEach(function(el) {
+    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+    else if (el.tagName === 'TEXTAREA') el.value = '';
+    else el.value = '';
+  });
+
+  toast('下单成功！🎉');
+  setTimeout(function() { STATE.orderTab = 'published'; showPage('orders'); }, 800);
+}
+
+/* ========== Accept / Finish ========== */
+function acceptOrder(id) {
+  var order = STATE.orders.find(function(o) { return o.id === id; });
+  if (!order || order.status !== 'pending' || order.acceptor) { toast('手慢了，已被抢走~'); renderHall(); return; }
+  if (order.publisherId === STATE.user.id) { toast('不能接自己的订单哦~'); return; }
+  if (!confirm('确定要接「' + order.typeName + '」吗？\n发布者：' + order.publisherName)) return;
+  order.acceptor = { id: STATE.user.id, name: STATE.user.name, phone: STATE.user.phone };
+  order.status = 'accepted';
+  saveState();
+  toast('抢单成功！⚡');
+  renderHall();
+}
+
+function finishOrder(id) {
+  if (!confirm('确定标记为已完成吗？')) return;
+  var order = STATE.orders.find(function(o) { return o.id === id; });
+  if (order && order.status === 'accepted') { order.status = 'done'; saveState(); renderOrders(); updateHomeStats(); toast('已标记完成 ✅'); }
+}
+
+/* ========== Queries ========== */
+function getAvailableOrders() { return STATE.orders.filter(function(o) { return o.status === 'pending' && !o.acceptor; }); }
+function getMyPublishedOrders() { var mid = STATE.user ? STATE.user.id : ''; return STATE.orders.filter(function(o) { return o.publisherId === mid; }); }
+function getMyAcceptedOrders() { var mid = STATE.user ? STATE.user.id : ''; return STATE.orders.filter(function(o) { return o.acceptor && o.acceptor.id === mid; }); }
+
+/* ========== Render Hall ========== */
+function renderHall() {
+  var orders = getAvailableOrders();
+  orders.sort(function(a, b) { return b.timestamp - a.timestamp; });
+  document.getElementById('hall-count').textContent = orders.length;
+
+  var container = document.getElementById('hall-list');
+  if (!orders.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🕊️</div><div class="empty-text">暂时没有可接的订单</div><div style="font-size:12px;color:#9CA3AF;margin-top:4px;">去首页发布一单，或者等同学来发布吧~</div></div>';
+    return;
+  }
+
+  container.innerHTML = orders.map(function(o) {
+    var reward = o.type === 'express' ? o.fields.size : o.type === 'food' ? (o.fields.amount || '面议') : '¥' + (o.fields.budget || '面议');
+    var body = '';
+    if (o.type === 'express') body = '<div class="info-row"><span class="info-label">快递</span><span class="info-value">' + o.fields.company + ' | 取件码：' + o.fields.code + '</span></div><div class="info-row"><span class="info-label">取件</span><span class="info-value">' + o.fields.location + '</span></div><div class="info-row"><span class="info-label">送达</span><span class="info-value">' + o.fields.delivery + '</span></div>';
+    else if (o.type === 'food') body = '<div class="info-row"><span class="info-label">平台</span><span class="info-value">' + o.fields.platform + '</span></div><div class="info-row"><span class="info-label">取餐</span><span class="info-value">' + o.fields.pickup + '</span></div><div class="info-row"><span class="info-label">送达</span><span class="info-value">' + o.fields.delivery + '</span></div>';
+    else body = '<div class="info-row"><span class="info-label">窗口</span><span class="info-value">' + o.fields.window + '</span></div><div class="info-row"><span class="info-label">菜品</span><span class="info-value">' + o.fields.dishes + '</span></div><div class="info-row"><span class="info-label">送达</span><span class="info-value">' + o.fields.delivery + '</span></div>';
+    if (o.fields.remark) body += '<div class="remark-row">💬 ' + o.fields.remark + '</div>';
+    return '<div class="hall-card"><div class="card-head"><span class="card-type ' + o.type + '">' + o.typeName + '</span><span class="card-reward">' + reward + '</span></div><div class="card-body">' + body + '</div><div class="card-foot"><span class="pub-name">👤 ' + o.publisherName + '</span><span class="pub-time">' + o.time + '</span><button class="grab-btn" onclick="acceptOrder(\'' + o.id + '\')">⚡ 抢单</button></div></div>';
+  }).join('') + '<div class="list-end">— 已经到底了 —</div>';
+}
+
+/* ========== Render Orders ========== */
+function renderOrders() {
+  var orders = STATE.orderTab === 'published' ? getMyPublishedOrders() : getMyAcceptedOrders();
+  orders.sort(function(a, b) { return b.timestamp - a.timestamp; });
+
+  document.querySelectorAll('#page-orders .sub-tab-item').forEach(function(b, i) {
+    b.classList.toggle('active', (i === 0 && STATE.orderTab === 'published') || (i === 1 && STATE.orderTab === 'accepted'));
+  });
+
+  var container = document.getElementById('order-list');
+  if (!orders.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">' + (STATE.orderTab === 'published' ? '📋' : '🛵') + '</div><div class="empty-text">' + (STATE.orderTab === 'published' ? '暂无发布的订单，快去下单吧！' : '还没有接过单，去闪送侠大厅看看吧！⚡') + '</div></div>';
+    return;
+  }
+
+  container.innerHTML = orders.map(function(o) {
+    var stText = o.status === 'pending' ? '待接单' : o.status === 'accepted' ? '闪送中' : '已完成';
+    var stClass = o.status;
+    var detail = '';
+    if (o.type === 'express') detail = '<div>📦 <b>' + o.fields.company + '</b> | 取件码：' + o.fields.code + '</div><div>📍 ' + o.fields.location + ' → 🏠 ' + o.fields.delivery + '</div>';
+    else if (o.type === 'food') detail = '<div>🛵 <b>' + o.fields.platform + '</b> | 💰 ' + (o.fields.amount || '--') + '</div><div>📍 ' + o.fields.pickup + ' → 🏠 ' + o.fields.delivery + '</div>';
+    else detail = '<div>🍱 <b>' + o.fields.window + '</b> | ' + o.fields.dishes + '</div><div>🏠 送达：' + o.fields.delivery + '</div>';
+
+    var extra = '';
+    if (o.acceptor && STATE.orderTab === 'published') extra = '<div class="acceptor-info">⚡ 闪送侠：' + o.acceptor.name + '</div>';
+    else if (STATE.orderTab === 'accepted') extra = '<div class="acceptor-info">👤 发布者：' + o.publisherName + '</div>';
+
+    var btn = '';
+    if (o.status === 'pending' && STATE.orderTab === 'published') btn = '<div class="status-hint">⏳ 等待闪送侠接单中...</div>';
+    else if (o.status === 'accepted' && STATE.orderTab === 'published') btn = '<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;" onclick="finishOrder(\'' + o.id + '\')">✅ 确认完成</button>';
+    else if (o.status === 'accepted' && STATE.orderTab === 'accepted') btn = '<button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%;background:var(--hot);" onclick="finishOrder(\'' + o.id + '\')">🏁 标记送达</button>';
+
+    return '<div class="card order-card"><div class="order-header"><span class="order-type ' + o.type + '">' + o.typeName + '</span><span class="order-status ' + stClass + '">' + stText + '</span></div><div class="order-detail">' + detail + extra + '</div><div class="order-footer"><span class="order-time">' + o.time + '</span><span style="font-size:11px;color:var(--text-light);">单号：' + o.id + '</span></div>' + btn + '</div>';
+  }).join('');
+}
+
+function switchOrderTab(tab) { STATE.orderTab = tab; renderOrders(); }
+
+/* ========== Home Stats ========== */
+function updateHomeStats() {
+  var myOrders = getMyPublishedOrders();
+  var total = myOrders.length;
+  var done = myOrders.filter(function(o) { return o.status === 'done'; }).length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-score').textContent = total > 0 ? '4.8' : '--';
+}
+
+/* ========== Profile ========== */
+function updateProfile() {
+  if (STATE.user) {
+    document.getElementById('profile-name').textContent = STATE.user.name;
+    document.getElementById('profile-id').textContent = '学号：' + STATE.user.id;
+  }
+}
+
+/* ========== Stats Modal ========== */
+function openStats() {
+  var my = getMyPublishedOrders();
+  var total = my.length;
+  var done = my.filter(function(o) { return o.status === 'done'; }).length;
+  var ex = my.filter(function(o) { return o.type === 'express'; }).length;
+  var fo = my.filter(function(o) { return o.type === 'food'; }).length;
+  var ca = my.filter(function(o) { return o.type === 'cafeteria'; }).length;
+  var rate = total > 0 ? Math.round(done / total * 100) + '%' : '0%';
+
+  var acc = getMyAcceptedOrders();
+  var aTotal = acc.length;
+  var aDone = acc.filter(function(o) { return o.status === 'done'; }).length;
+  var aRate = aTotal > 0 ? Math.round(aDone / aTotal * 100) + '%' : '0%';
+
+  document.getElementById('stats-content').innerHTML =
+    '<div class="stats-grid">' +
+      '<div class="stats-item"><div class="stats-num" style="color:#07C160;">' + total + '</div><div class="stats-label">总发布</div></div>' +
+      '<div class="stats-item"><div class="stats-num" style="color:#3B82F6;">' + done + '</div><div class="stats-label">已完成</div></div>' +
+      '<div class="stats-item"><div class="stats-num" style="color:#10B981;">' + rate + '</div><div class="stats-label">完成率</div></div>' +
+    '</div>' +
+    '<div class="stats-section-title">📝 我发布的订单</div>' +
+    '<div class="stats-detail">' +
+      '<div class="detail-row"><span>📦 快递代取</span><span class="detail-num">' + ex + ' 单</span></div>' +
+      '<div class="detail-row"><span>🛵 外卖代送</span><span class="detail-num">' + fo + ' 单</span></div>' +
+      '<div class="detail-row"><span>🍱 食堂代买</span><span class="detail-num">' + ca + ' 单</span></div>' +
+    '</div>' +
+    '<div class="stats-section-title" style="margin-top:16px;">⚡ 闪送侠战绩</div>' +
+    '<div class="stats-grid">' +
+      '<div class="stats-item"><div class="stats-num" style="color:#FF6B35;">' + aTotal + '</div><div class="stats-label">总接单</div></div>' +
+      '<div class="stats-item"><div class="stats-num" style="color:#10B981;">' + aDone + '</div><div class="stats-label">已送达</div></div>' +
+      '<div class="stats-item"><div class="stats-num" style="color:#3B82F6;">' + aRate + '</div><div class="stats-label">完成率</div></div>' +
+    '</div>';
+  document.getElementById('stats-modal').style.display = 'block';
+}
+function closeStats() { document.getElementById('stats-modal').style.display = 'none'; }
+
+/* ========== Feedback Modal ========== */
+function openFeedback() {
+  STATE.feedbackRating = 0;
+  document.getElementById('feedback-text').value = '';
+  document.querySelectorAll('#star-row .star-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('rating-word').textContent = '请点击星星评分';
+  document.getElementById('feedback-modal').style.display = 'block';
+}
+function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+function setRating(n) {
+  STATE.feedbackRating = n;
+  document.querySelectorAll('#star-row .star-btn').forEach(function(b, i) { b.classList.toggle('active', i < n); });
+  document.getElementById('rating-word').textContent = n + '分';
+}
+function submitFeedback() {
+  if (!STATE.feedbackRating) { toast('请先评分'); return; }
+  toast('感谢你的评价！❤️');
+  closeFeedback();
+}
+
+/* ========== Settings Modal ========== */
+function openSettings() { document.getElementById('settings-modal').style.display = 'block'; }
+function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
+function clearCache() {
+  if (confirm('确定要清除所有本地数据吗？这将删除登录信息和订单记录。')) {
+    localStorage.clear(); STATE.user = null; STATE.orders = []; saveState(); closeSettings(); toast('缓存已清除');
+    setTimeout(function() { showPage('login'); }, 800);
+  }
+}
+function aboutApp() { alert('果园送 v1.0\n校园生活服务平台\n快递代取 · 外卖代送 · 食堂代买\n\n质量管理学课程设计作品'); }
+
+/* ========== Init ========== */
+loadState();
+if (STATE.user) { showPage('home'); updateProfile(); updateHomeStats(); }
+else { showPage('login'); }
+</script>
+</body>
+</html>
